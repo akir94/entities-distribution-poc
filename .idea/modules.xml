@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/updates-distributer.iml" filepath="$PROJECT_DIR$/.idea/modules/updates-distributer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/updates-distributer_main.iml" filepath="$PROJECT_DIR$/.idea/modules/updates-distributer_main.iml" group="updates-distributer" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/updates-distributer_test.iml" filepath="$PROJECT_DIR$/.idea/modules/updates-distributer_test.iml" group="updates-distributer" />
+    </modules>
+  </component>
+</project>

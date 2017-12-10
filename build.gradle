@@ -1,0 +1,27 @@
+group 'akir94'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+    flatDir {
+        dirs '../libs'
+    }
+}
+
+dependencies {
+    compile "com.redislabs:jredisearch:1.0-SNAPSHOT-jar-with-dependencies"
+    compile "redis-clients:jedis:3.0.0"
+    compile 'com.google.code.gson:gson:2.8.2'
+
+    compile 'io.deepstream:deepstream.io-client-java:2.0.4'
+
+    compile group: 'io.vertx', name: 'vertx-core', version: '3.5.0'
+    compile group: 'io.vertx', name: 'vertx-web', version: '3.5.0'
+
+}
