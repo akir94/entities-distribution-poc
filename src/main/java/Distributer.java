@@ -1,5 +1,3 @@
-import com.google.gson.JsonObject;
-import io.deepstream.DeepstreamClient;
 import io.redisearch.Document;
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
@@ -10,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class Distributer {
     private Client redisearchClient;

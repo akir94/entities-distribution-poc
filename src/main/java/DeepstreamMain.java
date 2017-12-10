@@ -1,15 +1,7 @@
-import com.google.gson.JsonObject;
 import io.deepstream.DeepstreamClient;
-import io.redisearch.Document;
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
 import io.redisearch.client.Client;
 
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,10 +20,8 @@ public class DeepstreamMain {
             clientThread.start();
 
             Client redisearchClient = new Client("entitiesFeed", "192.168.0.50", 6379);
-            pollAndSendUpdates(deepstreamClient, redisearchClient, clients);
-
-            clientThread.interrupt();
-            deepstreamClient.close();
+            Thread distributerThread = new Thread(() -> pollAndSendUpdates(deepstreamClient, redisearchClient, clients));
+            distributerThread.start();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -65,6 +55,12 @@ public class DeepstreamMain {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void closeDeepstreamClient(DeepstreamClient deepstreamClient) {
+        if (deepstreamClient != null) {
+            deepstreamClient.close();
         }
     }
 }

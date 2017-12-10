@@ -2,7 +2,6 @@ import com.google.gson.JsonObject;
 
 import java.util.Random;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class ClientSimulator {
     String clientName;

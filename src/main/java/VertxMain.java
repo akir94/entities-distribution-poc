@@ -1,4 +1,3 @@
-import io.deepstream.DeepstreamClient;
 import io.redisearch.client.Client;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;

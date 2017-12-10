@@ -1,6 +1,5 @@
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import io.deepstream.EventListener;
 import io.vertx.core.eventbus.Message;
 
 import java.util.concurrent.ConcurrentMap;
