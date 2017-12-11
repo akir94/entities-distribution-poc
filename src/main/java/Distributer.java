@@ -1,33 +1,50 @@
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.redisearch.Document;
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
 import io.redisearch.client.Client;
+import io.vertx.core.cli.CLI;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 
+/**
+ * Queries redis, and sends the entities that changed since last time.
+ */
 public class Distributer {
     private Client redisearchClient;
     private ConcurrentMap<String, ClientState> clients;
     private BiConsumer<String, String> updateConsumer;
+
+    private JsonParser jsonParser;
 
     public Distributer(Client redisearchClient, ConcurrentMap<String, ClientState> clients,
                        BiConsumer<String, String> updateConsumer) {
         this.redisearchClient = redisearchClient;
         this.clients = clients;
         this.updateConsumer = updateConsumer;
+
+        this.jsonParser = new JsonParser();
     }
 
     public void distribute() {
-        for (Map.Entry<String, ClientState> entry : clients.entrySet()) {
-            List<Document> documents = queryDocuments(entry.getValue());
-            List<Document> filteredDocuments = filterDocuments(documents, entry.getValue().getPreviouslySentUpdates());
-            sendDocuments(entry.getKey(), entry.getValue(), filteredDocuments);
+        for (Map.Entry<String, ClientState> clientEntry : clients.entrySet()) {
+            String clientName = clientEntry.getKey();
+            ClientState clientState = clientEntry.getValue();
+            List<Document> documents = queryDocuments(clientState);
+
+            Map<String, ActionAndData> entitiesAndActions = chooseActionsForEntities(documents, clientState);
+            Map<String, Instant> newUpdateTimes = new HashMap<>(entitiesAndActions.size());
+            sendToClientAndStoreUpdateTimes(clientName, entitiesAndActions, newUpdateTimes);
+            clientState.setPreviouslyUpdateTimes(newUpdateTimes);
         }
     }
 
@@ -41,32 +58,78 @@ public class Distributer {
         return res.docs;
     }
 
-    private List<Document> filterDocuments(List<Document> documents, Map<String, Instant> previouslySentUpdates) {
-        // TODO notify when entity is deleted or leaves area
-        List<Document> filteredDocuments = new ArrayList<>(documents.size());
+    private Map<String, ActionAndData> chooseActionsForEntities(List<Document> documents, ClientState clientState) {
+        Map<String, Instant> previousUpdateTimes = clientState.getPreviouslyUpdateTimes();
+        Set<String> entitiesNotSeenYet = new HashSet<>(previousUpdateTimes.keySet());
+        Map<String, ActionAndData> entitiesAndActions = new HashMap<>(previousUpdateTimes.size());
         for (Document document : documents) {
-            Instant updateTime = Instant.ofEpochMilli((Long) document.get("lastUpdateTime"));
-            Instant previousUpdateTime = previouslySentUpdates.get(document.getId());
-            if (previousUpdateTime == null || updateTime.isAfter(previousUpdateTime)) {
-                previouslySentUpdates.put(document.getId(), updateTime);
-                filteredDocuments.add(document);
-            } else {
-                System.out.println("not sending entity with id " + document.getId() + " because it wasn't updated");
+            JsonObject payload = (JsonObject) jsonParser.parse(new String(document.getPayload(), StandardCharsets.UTF_8));
+            if (isEntityInBounds(payload, clientState)) {
+                String entityId = document.getId();
+                entitiesNotSeenYet.remove(entityId);
+                Instant previousUpdateTime = previousUpdateTimes.get(entityId);
+                ActionAndData actionAndData = decideUpdateOrNot(payload, previousUpdateTime);
+                entitiesAndActions.put(entityId, actionAndData);
             }
         }
-        return filteredDocuments;
+        for (String entityId : entitiesNotSeenYet) {
+            entitiesAndActions.put(entityId, new ActionAndData(Action.REMOVE, null, null));
+        }
+        return entitiesAndActions;
     }
 
-    private void sendDocuments(String clientName, ClientState clientState, List<Document> documents) {
-        for (Document document : documents) {
-            String locationString = (String) document.get("location");
-            String[] locationParts = locationString.split(",");
-            double longitude = Double.parseDouble(locationParts[0]);
-            double latitude = Double.parseDouble(locationParts[1]);
+    private boolean isEntityInBounds(JsonObject payload, ClientState clientState) {
+        return clientState.isInBounds(payload.get("longitude").getAsDouble(),
+                                      payload.get("latitude").getAsDouble());
+    }
 
-            if (clientState.isInBounds(longitude, latitude)) {
-                updateConsumer.accept(clientName, new String(document.getPayload(), StandardCharsets.UTF_8));
+    private ActionAndData decideUpdateOrNot(JsonObject currentPayload, Instant previousUpdateTime) {
+        Instant updateTime = Instant.ofEpochMilli(currentPayload.get("lastUpdateTime").getAsLong());
+        if (previousUpdateTime == null || updateTime.isAfter(previousUpdateTime)) {
+            return new ActionAndData(Action.UPDATE, updateTime, currentPayload);
+        } else {
+            return new ActionAndData(Action.NOT_UPDATE, previousUpdateTime, null);
+        }
+    }
+
+    private void sendToClientAndStoreUpdateTimes(String clientName, Map<String, ActionAndData> entitiesAndActions,
+                                                 Map<String, Instant> newUpdateTimes) {
+        for (Map.Entry<String, ActionAndData> entitiesEntry : entitiesAndActions.entrySet()) {
+            String entityId = entitiesEntry.getKey();
+            ActionAndData stateAndAction = entitiesEntry.getValue();
+            switch (stateAndAction.action) {
+                case UPDATE:
+                    updateConsumer.accept(clientName, stateAndAction.state.toString());
+                    newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
+                    break;
+                case NOT_UPDATE:
+                    newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
+                    break;
+                case REMOVE:
+                    JsonObject deleteMessage = new JsonObject();
+                    deleteMessage.addProperty("id", entityId);
+                    deleteMessage.addProperty("action", "delete");
+                    updateConsumer.accept(clientName, deleteMessage.toString());
+                    break;
             }
         }
+    }
+
+    private static class ActionAndData {
+        public Action action;
+        public Instant lastUpdateTime;
+        public JsonObject state;
+
+        public ActionAndData(Action action, Instant lastUpdateTime, JsonObject state) {
+            this.action = action;
+            this.lastUpdateTime = lastUpdateTime;
+            this.state = state;
+        }
+    }
+
+    private enum Action {
+        UPDATE,
+        NOT_UPDATE,
+        REMOVE;
     }
 }

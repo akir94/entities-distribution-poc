@@ -1,7 +1,6 @@
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class ClientState {
     private double maxLongitude;
@@ -13,7 +12,7 @@ public class ClientState {
     private double centerLatitude;
     private double queryRadius;
 
-    private Map<String, Instant> previouslySentUpdates;
+    private Map<String, Instant> previouslyUpdateTimes;
 
     public ClientState(double maxLongitude, double minLangitude, double maxLatitude, double minLatitude) {
         this.maxLongitude = maxLongitude;
@@ -25,7 +24,7 @@ public class ClientState {
         this.centerLatitude = (maxLatitude + minLatitude) / 2;
         this.queryRadius = computeQueryRadius();
 
-        this.previouslySentUpdates = new ConcurrentHashMap<>();
+        this.previouslyUpdateTimes = new ConcurrentHashMap<>();
     }
 
     private double computeQueryRadius() {
@@ -49,12 +48,16 @@ public class ClientState {
         return queryRadius;
     }
 
-    public Map<String, Instant> getPreviouslySentUpdates() {
-        return previouslySentUpdates;
+    public Map<String, Instant> getPreviouslyUpdateTimes() {
+        return previouslyUpdateTimes;
     }
 
     public boolean isInBounds(double longitude, double latitude) {
         return maxLongitude > longitude && longitude > minLongitude &&
                 maxLatitude > latitude && latitude > minLatitude;
+    }
+
+    public void setPreviouslyUpdateTimes(Map<String, Instant> previouslyUpdateTimes) {
+        this.previouslyUpdateTimes = previouslyUpdateTimes;
     }
 }
