@@ -1,3 +1,5 @@
+package org.z.distributer;
+
 import io.redisearch.client.Client;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -6,6 +8,10 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import org.z.distributer.common.ClientSimulator;
+import org.z.distributer.common.ClientState;
+import org.z.distributer.common.ClientStateListener;
+import org.z.distributer.common.Distributer;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

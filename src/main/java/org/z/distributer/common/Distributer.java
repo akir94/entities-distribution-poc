@@ -1,10 +1,11 @@
+package org.z.distributer.common;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.redisearch.Document;
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
 import io.redisearch.client.Client;
-import io.vertx.core.cli.CLI;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

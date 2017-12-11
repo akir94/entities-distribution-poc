@@ -1,3 +1,5 @@
+package org.z.distributer.common;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.vertx.core.eventbus.Message;

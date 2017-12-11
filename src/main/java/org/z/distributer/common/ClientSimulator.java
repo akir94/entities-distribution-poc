@@ -1,3 +1,5 @@
+package org.z.distributer.common;
+
 import com.google.gson.JsonObject;
 
 import java.util.Random;
