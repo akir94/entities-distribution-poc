@@ -1,3 +1,8 @@
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 public class ClientState {
     private double maxLongitude;
     private double minLongitude;
@@ -8,6 +13,8 @@ public class ClientState {
     private double centerLatitude;
     private double queryRadius;
 
+    private Map<String, Instant> previouslySentUpdates;
+
     public ClientState(double maxLongitude, double minLangitude, double maxLatitude, double minLatitude) {
         this.maxLongitude = maxLongitude;
         this.minLongitude = minLangitude;
@@ -17,6 +24,8 @@ public class ClientState {
         this.centerLongitude = (maxLongitude + minLangitude) / 2;
         this.centerLatitude = (maxLatitude + minLatitude) / 2;
         this.queryRadius = computeQueryRadius();
+
+        this.previouslySentUpdates = new ConcurrentHashMap<>();
     }
 
     private double computeQueryRadius() {
@@ -26,11 +35,6 @@ public class ClientState {
         double radiusInNauticalMiles = radiusInDegrees * 60.0;
         double radiusInKilometers = radiusInNauticalMiles * 1.851999326;
         return radiusInKilometers;
-    }
-
-    public boolean isInBounds(double longitude, double latitude) {
-        return maxLongitude > longitude && longitude > minLongitude &&
-                maxLatitude > latitude && latitude > minLatitude;
     }
 
     public double getCenterLongitude() {
@@ -43,5 +47,14 @@ public class ClientState {
 
     public double getQueryRadius() {
         return queryRadius;
+    }
+
+    public Map<String, Instant> getPreviouslySentUpdates() {
+        return previouslySentUpdates;
+    }
+
+    public boolean isInBounds(double longitude, double latitude) {
+        return maxLongitude > longitude && longitude > minLongitude &&
+                maxLatitude > latitude && latitude > minLatitude;
     }
 }
