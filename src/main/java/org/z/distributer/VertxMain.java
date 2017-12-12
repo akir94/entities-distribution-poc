@@ -39,10 +39,10 @@ public class VertxMain extends AbstractVerticle{
         ClientStateListener clientStateListener = new ClientStateListener(clients);
         eventBus.consumer("setClientState", clientStateListener::handleVertxEvent);
 
-//        Thread clientThread = new Thread(() -> clientThread(eventBus));
-//        clientThread.start();
+        Thread clientThread = new Thread(() -> clientThread(eventBus));
+        clientThread.start();
 
-        Client redisearchClient = new Client("entitiesFeed", "192.168.0.50", 6379);
+        Client redisearchClient = new Client("entitiesFeed", "192.168.0.51", 6379);
         Thread distributerThread = new Thread(() -> pollAndSendUpdates(eventBus, redisearchClient, clients));
         distributerThread.start();
     }

@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: com.redislabs:jredisearch:1.0-SNAPSHOT-jar-with-dependencies">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../libs/jredisearch-1.0-SNAPSHOT-jar-with-dependencies.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jredisearch-1.0-SNAPSHOT-jar-with-dependencies.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

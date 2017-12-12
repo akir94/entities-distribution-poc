@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 public class DeepstreamMain {
     public static void main(String[] args) {
         try {
-            DeepstreamClient deepstreamClient = new DeepstreamClient("192.168.0.50:6020");
+            DeepstreamClient deepstreamClient = new DeepstreamClient("192.168.0.51:6020");
             deepstreamClient.login();
 
             ConcurrentMap<String, ClientState> clients = new ConcurrentHashMap<>();
@@ -25,7 +25,7 @@ public class DeepstreamMain {
             Thread clientThread = new Thread(() -> clientThread(deepstreamClient));
             clientThread.start();
 
-            Client redisearchClient = new Client("entitiesFeed", "192.168.0.50", 6379);
+            Client redisearchClient = new Client("entitiesFeed", "192.168.0.51", 6379);
             Thread distributerThread = new Thread(() -> pollAndSendUpdates(deepstreamClient, redisearchClient, clients));
             distributerThread.start();
         } catch (URISyntaxException e) {
@@ -61,12 +61,6 @@ public class DeepstreamMain {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    private static void closeDeepstreamClient(DeepstreamClient deepstreamClient) {
-        if (deepstreamClient != null) {
-            deepstreamClient.close();
         }
     }
 }

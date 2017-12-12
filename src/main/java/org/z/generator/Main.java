@@ -13,7 +13,7 @@ import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        Client client = new Client("entitiesFeed", "192.168.0.50", 6379);
+        Client client = new Client("entitiesFeed", "192.168.0.51", 6379);
         try {
             client.dropIndex();
         } catch (JedisDataException e) {
@@ -24,16 +24,24 @@ public class Main {
 
         Random random = new Random();
         Map<String, Object> fields = new HashMap<>();
-        for (int i = 0; i < 100; i++) {
-            String entityId = "entity" + i;
-            double longitude = 30 + random.nextDouble() * 10;
-            double latitude = 30 + random.nextDouble() * 10;
-            Instant lastUpdateTime = Instant.now();
-            double someData = random.nextDouble();
+        while (true) {
+            for (int i = 0; i < 100; i++) {
+                String entityId = "entity" + i;
+                double longitude = 30 + random.nextDouble() * 10;
+                double latitude = 30 + random.nextDouble() * 10;
+                Instant lastUpdateTime = Instant.now();
+                double someData = random.nextDouble();
 
-            fields.put("location", longitude + "," + latitude); // Yup, that's the syntax
-            byte[] payload = generatePayload(entityId, longitude, latitude, lastUpdateTime, someData);
-            client.addDocument(entityId, 1.0, fields, false, true, payload);
+                fields.put("location", longitude + "," + latitude); // Yup, that's the syntax
+                byte[] payload = generatePayload(entityId, longitude, latitude, lastUpdateTime, someData);
+                client.addDocument(entityId, 1.0, fields, false, true, payload);
+            }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 
