@@ -15,23 +15,23 @@ public class ClientStateListener {
     }
 
     public void handleDeepstreamEvent(String eventName, Object data) {
-        setClientState(data.toString());
+        setClientState((JsonObject)data);
     }
 
-    public void handleVertxEvent(Message<String> message) {
-        setClientState(message.body());
+    public void handleVertxEvent(Message<io.vertx.core.json.JsonObject > message) {
+        io.vertx.core.json.JsonObject newState = message.body();
+        JsonObject newStateAsJson = new JsonParser().parse(newState.encode()).getAsJsonObject();
+        setClientState(newStateAsJson);
     }
 
-    private void setClientState(String newState) {
-        JsonObject newStateAsJson = new JsonParser().parse(newState)
-                .getAsJsonObject();
-        String clientName = newStateAsJson.get("name").getAsString();
+    private void setClientState(JsonObject newState) {
+        String clientName = newState.get("name").getAsString();
         ClientState newClientState = new ClientState(
-                newStateAsJson.get("maxLongitude").getAsDouble(),
-                newStateAsJson.get("minLongitude").getAsDouble(),
-                newStateAsJson.get("maxLatitude").getAsDouble(),
-                newStateAsJson.get("minLatitude").getAsDouble());
-        System.out.println("registering client called " + clientName);
+                newState.get("maxLongitude").getAsDouble(),
+                newState.get("minLongitude").getAsDouble(),
+                newState.get("maxLatitude").getAsDouble(),
+                newState.get("minLatitude").getAsDouble());
+        System.out.println("registering client called " + clientName + " with data " + newState);
         clients.put(clientName, newClientState);
     }
 }

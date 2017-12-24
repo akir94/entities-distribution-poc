@@ -13,7 +13,7 @@ import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        Client client = new Client("entitiesFeed", "192.168.0.51", 6379);
+        Client client = new Client("entitiesFeed", "192.168.0.60", 6379);
         try {
             client.dropIndex();
         } catch (JedisDataException e) {
@@ -25,7 +25,7 @@ public class Main {
         Random random = new Random();
         Map<String, Object> fields = new HashMap<>();
         while (true) {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 300; i++) {
                 String entityId = "entity" + i;
                 double longitude = 30 + random.nextDouble() * 10;
                 double latitude = 30 + random.nextDouble() * 10;
@@ -35,6 +35,7 @@ public class Main {
                 fields.put("location", longitude + "," + latitude); // Yup, that's the syntax
                 byte[] payload = generatePayload(entityId, longitude, latitude, lastUpdateTime, someData);
                 client.addDocument(entityId, 1.0, fields, false, true, payload);
+                System.out.println(String.format("ID: %s, Long: %f, Lat: %f, updateTime: %d, someData: %s", entityId, longitude, latitude, lastUpdateTime.toEpochMilli(), someData));
             }
             try {
                 Thread.sleep(500);

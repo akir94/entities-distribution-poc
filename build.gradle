@@ -23,5 +23,6 @@ dependencies {
 
     compile group: 'io.vertx', name: 'vertx-core', version: '3.5.0'
     compile group: 'io.vertx', name: 'vertx-web', version: '3.5.0'
+    compile 'io.vertx:vertx-tcp-eventbus-bridge:3.5.0'
 
 }

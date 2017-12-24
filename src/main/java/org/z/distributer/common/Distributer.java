@@ -23,12 +23,12 @@ import java.util.function.BiConsumer;
 public class Distributer {
     private Client redisearchClient;
     private ConcurrentMap<String, ClientState> clients;
-    private BiConsumer<String, String> updateConsumer;
+    private BiConsumer<String, JsonObject> updateConsumer;
 
     private JsonParser jsonParser;
 
     public Distributer(Client redisearchClient, ConcurrentMap<String, ClientState> clients,
-                       BiConsumer<String, String> updateConsumer) {
+                       BiConsumer<String, JsonObject> updateConsumer) {
         this.redisearchClient = redisearchClient;
         this.clients = clients;
         this.updateConsumer = updateConsumer;
@@ -99,7 +99,7 @@ public class Distributer {
             ActionAndData stateAndAction = entitiesEntry.getValue();
             switch (stateAndAction.action) {
                 case UPDATE:
-                    updateConsumer.accept(clientName, stateAndAction.state.toString());
+                    updateConsumer.accept(clientName, stateAndAction.state);
                     newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
                     break;
                 case NOT_UPDATE:
@@ -109,7 +109,7 @@ public class Distributer {
                     JsonObject deleteMessage = new JsonObject();
                     deleteMessage.addProperty("id", entityId);
                     deleteMessage.addProperty("action", "delete");
-                    updateConsumer.accept(clientName, deleteMessage.toString());
+                    updateConsumer.accept(clientName, deleteMessage);
                     break;
             }
         }

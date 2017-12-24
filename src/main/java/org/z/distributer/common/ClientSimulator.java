@@ -7,10 +7,10 @@ import java.util.function.BiConsumer;
 
 public class ClientSimulator {
     String clientName;
-    private BiConsumer<String, String> eventConsumer;
+    private BiConsumer<String, JsonObject> eventConsumer;
     private Random random;
 
-    public ClientSimulator(String clientName, BiConsumer<String, String> eventConsumer) {
+    public ClientSimulator(String clientName, BiConsumer<String, JsonObject> eventConsumer) {
         this.clientName = clientName;
         this.eventConsumer = eventConsumer;
         this.random = new Random();
@@ -24,6 +24,6 @@ public class ClientSimulator {
         eventData.addProperty("maxLatitude", 35 + random.nextDouble() * 5);
         eventData.addProperty("minLatitude", 30 + random.nextDouble() * 5);
         System.out.println("sending state event with data " + eventData.toString());
-        eventConsumer.accept("setClientState", eventData.toString());
+        eventConsumer.accept("setClientState", eventData);
     }
 }
