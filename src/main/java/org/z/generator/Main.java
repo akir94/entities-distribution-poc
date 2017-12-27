@@ -13,7 +13,8 @@ import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        Client client = new Client("entitiesFeed", "192.168.0.53", 6379);
+        String redisHost = args[1];
+        Client client = new Client("entitiesFeed", redisHost, 6379);
         try {
             client.dropIndex();
         } catch (JedisDataException e) {

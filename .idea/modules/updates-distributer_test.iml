@@ -16,6 +16,7 @@
     <orderEntry type="library" name="Gradle: io.deepstream:deepstream.io-client-java:2.0.4" level="project" />
     <orderEntry type="library" name="Gradle: io.vertx:vertx-core:3.5.0" level="project" />
     <orderEntry type="library" name="Gradle: io.vertx:vertx-web:3.5.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.vertx:vertx-tcp-eventbus-bridge:3.5.0" level="project" />
     <orderEntry type="library" name="Gradle: org.java-websocket:Java-WebSocket:1.3.0" level="project" />
     <orderEntry type="library" name="Gradle: com.google.j2objc:j2objc-annotations:1.1" level="project" />
     <orderEntry type="library" name="Gradle: io.netty:netty-common:4.1.15.Final" level="project" />

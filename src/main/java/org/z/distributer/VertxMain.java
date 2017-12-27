@@ -27,34 +27,21 @@ import java.util.concurrent.ConcurrentMap;
 import io.vertx.ext.eventbus.bridge.tcp.TcpEventBusBridge;
 
 public class VertxMain extends AbstractVerticle{
+    private String sockjsBridgeAddress;
+    private String redisHost;
+
+    public VertxMain(String sockjsBridgeAddress, String redisHost) {
+        this.sockjsBridgeAddress = sockjsBridgeAddress;
+        this.redisHost = redisHost;
+    }
 
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
-        vertx.deployVerticle(new VertxMain());
+        vertx.deployVerticle(new VertxMain(args[1], args[2]));
     }
 
     @Override
     public void start(Future<Void> future) {
-        HttpServer server = vertx.createHttpServer();
-
-        Router router = Router.router(vertx);
-
-        SockJSHandler sockJSHandler = SockJSHandler.create(vertx);
-        PermittedOptions allAddresses = new PermittedOptions().setAddressRegex(".+");
-        BridgeOptions options = new BridgeOptions();
-        options.addInboundPermitted(allAddresses);
-        options.addOutboundPermitted(allAddresses);
-
-        sockJSHandler.bridge(options, be -> {
-            System.out.println("event type = " + be.type());
-            System.out.println("event body = " + be.getRawMessage().getString("body"));
-            be.complete(true);
-        });
-
-        router.route("/eventbus/*").handler(sockJSHandler);
-
-        listenToTCPBridge();
-
         EventBus eventBus = vertx.eventBus();
         eventBus.registerDefaultCodec(com.google.gson.JsonObject.class, new GsonJsonMessageCodec());
 
@@ -66,13 +53,28 @@ public class VertxMain extends AbstractVerticle{
         //Thread clientThread = new Thread(() -> clientThread(eventBus));
         //clientThread.start();
 
-        Client redisearchClient = new Client("entitiesFeed", "192.168.0.53", 6379);
+        Client redisearchClient = new Client("entitiesFeed", redisHost, 6379);
         Thread distributerThread = new Thread(() -> pollAndSendUpdates(eventBus, redisearchClient, clients));
         distributerThread.start();
 
-        router.route().handler(StaticHandler.create());
 
-        vertx.createHttpServer().requestHandler(router::accept).listen(7001, "192.168.0.53");
+        listenToSockjsBridge();
+        listenToTCPBridge();
+    }
+
+    private void listenToSockjsBridge() {
+        SockJSHandler sockJSHandler = SockJSHandler.create(vertx);
+        PermittedOptions allAddresses = new PermittedOptions().setAddressRegex(".+");
+        BridgeOptions options = new BridgeOptions();
+        options.addInboundPermitted(allAddresses);
+        options.addOutboundPermitted(allAddresses);
+        sockJSHandler.bridge(options);
+
+        Router router = Router.router(vertx);
+        router.route("/eventbus/*").handler(sockJSHandler);
+        router.route().handler(StaticHandler.create());
+        vertx.createHttpServer().requestHandler(router::accept).listen(7001, sockjsBridgeAddress);
+        System.out.println("started sockjs bridge on " + sockjsBridgeAddress + ":7001");
     }
 
     private void listenToTCPBridge() {
@@ -97,7 +99,7 @@ public class VertxMain extends AbstractVerticle{
                 (address, data) -> eventBus.publish(address, data));
         try {
             while (true) {
-                Thread.sleep(200);
+                Thread.sleep(50);
                 distributer.distribute();
             }
         } catch (InterruptedException e) {
