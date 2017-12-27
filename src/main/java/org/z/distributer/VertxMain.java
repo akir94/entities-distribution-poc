@@ -3,19 +3,25 @@ package org.z.distributer;
 import io.redisearch.client.Client;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 
+import io.vertx.core.http.HttpServer;
+import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import io.vertx.ext.web.handler.sockjs.SockJSSocket;
 import org.z.distributer.common.ClientSimulator;
 import org.z.distributer.common.ClientState;
 import org.z.distributer.common.ClientStateListener;
 import org.z.distributer.common.Distributer;
 import org.z.distributer.util.GsonJsonMessageCodec;
 
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import io.vertx.ext.eventbus.bridge.tcp.TcpEventBusBridge;
@@ -29,12 +35,21 @@ public class VertxMain extends AbstractVerticle{
 
     @Override
     public void start(Future<Void> future) {
+        HttpServer server = vertx.createHttpServer();
 
         Router router = Router.router(vertx);
 
         SockJSHandler sockJSHandler = SockJSHandler.create(vertx);
+        PermittedOptions allAddresses = new PermittedOptions().setAddressRegex(".+");
         BridgeOptions options = new BridgeOptions();
-        sockJSHandler.bridge(options);
+        options.addInboundPermitted(allAddresses);
+        options.addOutboundPermitted(allAddresses);
+
+        sockJSHandler.bridge(options, be -> {
+            System.out.println("event type = " + be.type());
+            System.out.println("event body = " + be.getRawMessage().getString("body"));
+            be.complete(true);
+        });
 
         router.route("/eventbus/*").handler(sockJSHandler);
 
@@ -51,9 +66,13 @@ public class VertxMain extends AbstractVerticle{
         //Thread clientThread = new Thread(() -> clientThread(eventBus));
         //clientThread.start();
 
-        Client redisearchClient = new Client("entitiesFeed", "192.168.0.60", 6379);
+        Client redisearchClient = new Client("entitiesFeed", "192.168.0.53", 6379);
         Thread distributerThread = new Thread(() -> pollAndSendUpdates(eventBus, redisearchClient, clients));
         distributerThread.start();
+
+        router.route().handler(StaticHandler.create());
+
+        vertx.createHttpServer().requestHandler(router::accept).listen(7001, "192.168.0.53");
     }
 
     private void listenToTCPBridge() {
