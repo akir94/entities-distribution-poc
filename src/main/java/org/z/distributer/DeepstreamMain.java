@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DeepstreamMain {
     public static void main(String[] args) {
-        String deepstreamHost = args[1];
-        String redisHost = args[2];
+        String deepstreamHost = args[0];
+        String redisHost = args[1];
         try {
             DeepstreamClient deepstreamClient = new DeepstreamClient(deepstreamHost + ":6020");
             deepstreamClient.login();

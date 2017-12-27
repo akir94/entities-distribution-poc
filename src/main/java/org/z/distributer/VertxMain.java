@@ -37,7 +37,7 @@ public class VertxMain extends AbstractVerticle{
 
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
-        vertx.deployVerticle(new VertxMain(args[1], args[2]));
+        vertx.deployVerticle(new VertxMain(args[0], args[1]));
     }
 
     @Override
