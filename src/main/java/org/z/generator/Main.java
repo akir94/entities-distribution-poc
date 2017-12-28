@@ -74,8 +74,9 @@ public class Main {
         payload.addProperty("id", entityId);
         payload.addProperty("longitude", longitude);
         payload.addProperty("latitude", latitude);
-        payload.addProperty("lastUpdateTime", lastUpdateTime.toEpochMilli());
+        payload.addProperty("lastUpdateTime", lastUpdateTime.toString());
         payload.addProperty("someData", someData);
+        payload.addProperty("action", "update");
         return payload.toString().getBytes(StandardCharsets.UTF_8);
     }
 

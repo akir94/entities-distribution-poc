@@ -84,7 +84,7 @@ public class Distributer {
     }
 
     private ActionAndData decideUpdateOrNot(JsonObject currentPayload, Instant previousUpdateTime) {
-        Instant updateTime = Instant.ofEpochMilli(currentPayload.get("lastUpdateTime").getAsLong());
+        Instant updateTime = Instant.parse(currentPayload.get("lastUpdateTime").getAsString());
         if (previousUpdateTime == null || updateTime.isAfter(previousUpdateTime)) {
             return new ActionAndData(Action.UPDATE, updateTime, currentPayload);
         } else {
@@ -99,6 +99,7 @@ public class Distributer {
             ActionAndData stateAndAction = entitiesEntry.getValue();
             switch (stateAndAction.action) {
                 case UPDATE:
+                    stateAndAction.state.addProperty("distributionTime", Instant.now().toString());
                     updateConsumer.accept(clientName, stateAndAction.state);
                     newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
                     break;
