@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "deepstream.io-client-js": "^2.3.0"
+    "deepstream.io-client-js": "^2.3.0",
+    "node-mutex": "^0.2.2"
   }
 }

@@ -11,25 +11,33 @@ const dataToSend = {
 	minLatitude: 30
 };
 
+// Statistics
+let count = 0;
+let sum = 0;
+
 client.event.subscribe(MY_NAME, (data) => {
-	let date = new Date();
-	let date2 = new Date(data.lastUpdateTime);
+		let date = new Date();
+		let lastUpdateTime = new Date(data.lastUpdateTime);
+		let receivedTime = new Date(data.distributionTime);
+		let diffReceivedTime = date - receivedTime;
 
-	// console.log(data);
-	// console.log(date);
-	// console.log(date2);
 
-	console.log('Entity ID: ' + data.id);
+	
+		if (data.action != 'delete') {
+			count++;
+			sum += diffReceivedTime;
+			console.log('Entity ID: ' + data.id);
+			console.log(diffReceivedTime);
+			console.log(date - lastUpdateTime);
+			console.log('Average: ' + (sum / count));
+		}
 
-	if (data.action != 'delete') {
-		console.log(date - date2);
-	}
+		console.log("=================================");
+		// date = date.getTime()/1000|0;
+		// console.log(data.lastUpdateTime);
+		// const delay = date - data.lastUpdateTime;
+		// console.log('Received Entity ID: ' + data.id + ' ' + delay);
 
-	console.log("=================================");
-	// date = date.getTime()/1000|0;
-	// console.log(data.lastUpdateTime);
-	// const delay = date - data.lastUpdateTime;
-	// console.log('Received Entity ID: ' + data.id + ' ' + delay);
 });
 
 client.event.emit(EVENT_NAME, dataToSend);

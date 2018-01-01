@@ -18,6 +18,10 @@ eb.onopen = function() {
       minLatitude: 30
     };
 
+	// Statistics
+	let count = 0;
+	let sum = 0;
+
     const a = eb.send('setClientState', dataToSend);
 
 	eb.registerHandler(dataToSend.name, function(error, message) {
@@ -25,8 +29,14 @@ eb.onopen = function() {
 			let myDate = new Date();
 			let receivedDate = new Date(message.body.distributionTime);
 			let lastUpdateTime = new Date(message.body.lastUpdateTime);
-			console.log(myDate - receivedDate);
+			let diffReceivedTime = myDate - receivedDate;
+	
+			count++;
+			sum += diffReceivedTime;
+
+			console.log(diffReceivedTime);
 			console.log(myDate - lastUpdateTime);
+			console.log('Average: ' + (sum / count));
 			console.log('============================');
 		}
     		//console.log('received a message: ' + JSON.stringify(message));
