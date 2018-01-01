@@ -51,7 +51,6 @@ public class VertxMain extends AbstractVerticle{
         Thread distributerThread = new Thread(() -> pollAndSendUpdates(eventBus, redisearchClient, clients));
         distributerThread.start();
 
-
         listenToSockjsBridge();
         listenToTCPBridge();
     }

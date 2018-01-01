@@ -100,6 +100,7 @@ public class Distributer {
             switch (stateAndAction.action) {
                 case UPDATE:
                     stateAndAction.state.addProperty("distributionTime", Instant.now().toString());
+                    stateAndAction.state.addProperty("action", "update");
                     updateConsumer.accept(clientName, stateAndAction.state);
                     newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
                     break;
