@@ -60,7 +60,6 @@ public class Main {
                     fields.put("location", longitude + "," + latitude); // Yup, that's the syntax
                     byte[] payload = generatePayload(entityId, longitude, latitude, lastUpdateTime, someData);
                     client.addDocument(entityId, 1.0, fields, false, true, payload);
-                    System.out.println(String.format("ID: %s, Long: %f, Lat: %f, updateTime: %d, someData: %s", entityId, longitude, latitude, lastUpdateTime.toEpochMilli(), someData));
                 }
                 Thread.sleep(50);
             }
@@ -76,7 +75,6 @@ public class Main {
         payload.addProperty("latitude", latitude);
         payload.addProperty("lastUpdateTime", lastUpdateTime.toString());
         payload.addProperty("someData", someData);
-        payload.addProperty("action", "update");
         return payload.toString().getBytes(StandardCharsets.UTF_8);
     }
 
