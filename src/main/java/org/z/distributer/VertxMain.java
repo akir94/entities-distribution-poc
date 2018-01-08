@@ -17,6 +17,8 @@ import org.z.distributer.common.ClientStateListener;
 import org.z.distributer.common.Distributer;
 import org.z.distributer.util.GsonJsonMessageCodec;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -92,8 +94,14 @@ public class VertxMain extends AbstractVerticle{
                 (address, data) -> eventBus.publish(address, data));
         try {
             while (true) {
-                Thread.sleep(50);
+                Instant start = Instant.now();
                 distributer.distribute();
+                Instant end = Instant.now();
+                Duration duration = Duration.between(start, end);
+                Duration timeToSleep = Duration.ofMillis(50).minus(duration);
+                if (!timeToSleep.isNegative()) {
+                    Thread.sleep(timeToSleep.toMillis());
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -1,5 +1,6 @@
 package org.z.distributer;
 
+import com.google.gson.JsonObject;
 import io.deepstream.DeepstreamClient;
 import io.redisearch.client.Client;
 import org.z.distributer.common.ClientSimulator;
@@ -8,6 +9,8 @@ import org.z.distributer.common.ClientStateListener;
 import org.z.distributer.common.Distributer;
 
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -27,7 +30,7 @@ public class DeepstreamMain {
             //Thread clientThread = new Thread(() -> clientThread(deepstreamClient));
             //clientThread.start();
 
-            Client redisearchClient = new Client("entitiesFeed", redisHost, 6379);
+            Client redisearchClient = new Client("entitiesFeed", redisHost, 6379, 3000, 100);
             Thread distributerThread = new Thread(() -> pollAndSendUpdates(deepstreamClient, redisearchClient, clients));
             distributerThread.start();
         } catch (URISyntaxException e) {
@@ -41,8 +44,14 @@ public class DeepstreamMain {
                 (eventName, data) -> deepstreamClient.event.emit(eventName, data));
         try {
             while (true) {
-                Thread.sleep(50);
+                Instant start = Instant.now();
                 distributer.distribute();
+                Instant end = Instant.now();
+                Duration duration = Duration.between(start, end);
+                Duration timeToSleep = Duration.ofMillis(50).minus(duration);
+                if (!timeToSleep.isNegative()) {
+                    Thread.sleep(timeToSleep.toMillis());
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
