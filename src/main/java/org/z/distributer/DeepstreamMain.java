@@ -1,6 +1,5 @@
 package org.z.distributer;
 
-import com.google.gson.JsonObject;
 import io.deepstream.DeepstreamClient;
 import io.redisearch.client.Client;
 import org.z.distributer.common.ClientSimulator;
@@ -9,52 +8,32 @@ import org.z.distributer.common.ClientStateListener;
 import org.z.distributer.common.Distributer;
 
 import java.net.URISyntaxException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
 
 public class DeepstreamMain {
     public static void main(String[] args) {
         String deepstreamHost = args[0];
         String redisHost = args[1];
         try {
+            Client redisearchClient = new Client("entitiesFeed", redisHost, 6379, 3000, 100);
             DeepstreamClient deepstreamClient = new DeepstreamClient(deepstreamHost + ":6020");
             deepstreamClient.login();
 
             ConcurrentMap<String, ClientState> clients = new ConcurrentHashMap<>();
-
-            ClientStateListener clientStateListener = new ClientStateListener(clients);
+            ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20);
+            Function<String, Distributer> distributerFactory = (clientName) -> new Distributer(redisearchClient, clients, clientName,
+                    (eventName, data) -> deepstreamClient.event.emit(eventName, data));
+            ClientStateListener clientStateListener = new ClientStateListener(clients, executorService, distributerFactory);
             deepstreamClient.event.subscribe("setClientState", clientStateListener::handleDeepstreamEvent);
 
             //Thread clientThread = new Thread(() -> clientThread(deepstreamClient));
             //clientThread.start();
-
-            Client redisearchClient = new Client("entitiesFeed", redisHost, 6379, 3000, 100);
-            Thread distributerThread = new Thread(() -> pollAndSendUpdates(deepstreamClient, redisearchClient, clients));
-            distributerThread.start();
         } catch (URISyntaxException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void pollAndSendUpdates(DeepstreamClient deepstreamClient, Client redisearchClient,
-                                    ConcurrentMap<String, ClientState> clients) {
-        Distributer distributer = new Distributer(redisearchClient, clients,
-                (eventName, data) -> deepstreamClient.event.emit(eventName, data));
-        try {
-            while (true) {
-                Instant start = Instant.now();
-                distributer.distribute();
-                Instant end = Instant.now();
-                Duration duration = Duration.between(start, end);
-                Duration timeToSleep = Duration.ofMillis(50).minus(duration);
-                if (!timeToSleep.isNegative()) {
-                    Thread.sleep(timeToSleep.toMillis());
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 

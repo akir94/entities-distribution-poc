@@ -5,13 +5,22 @@ import com.google.gson.JsonParser;
 import io.vertx.core.eventbus.Message;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class ClientStateListener {
 
     private ConcurrentMap<String, ClientState> clients;
+    private ScheduledExecutorService executorService;
+    private Function<String, Distributer> distributerFactory;
 
-    public ClientStateListener(ConcurrentMap<String, ClientState> clients) {
+    public ClientStateListener(ConcurrentMap<String, ClientState> clients,
+                               ScheduledExecutorService executorService,
+                               Function<String, Distributer> distributerFactory) {
         this.clients = clients;
+        this.executorService = executorService;
+        this.distributerFactory = distributerFactory;
     }
 
     public void handleDeepstreamEvent(String eventName, Object data) {
@@ -32,6 +41,16 @@ public class ClientStateListener {
                 newState.get("maxLatitude").getAsDouble(),
                 newState.get("minLatitude").getAsDouble());
         System.out.println("registering client called " + clientName + " with data " + newState);
-        clients.put(clientName, newClientState);
+        ClientState previousClientSatet = clients.put(clientName, newClientState);
+        if (previousClientSatet == null) {
+            initDistributerThread(clientName);
+        }
     }
+
+    private void initDistributerThread(String clientName) {
+        Distributer distributer = distributerFactory.apply(clientName);
+        executorService.scheduleAtFixedRate(() -> distributer.distribute(), 0, 50, TimeUnit.MILLISECONDS);
+    }
+
+
 }

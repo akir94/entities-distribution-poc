@@ -17,10 +17,11 @@ import org.z.distributer.common.ClientStateListener;
 import org.z.distributer.common.Distributer;
 import org.z.distributer.util.GsonJsonMessageCodec;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
 
 public class VertxMain extends AbstractVerticle{
     private String sockjsBridgeAddress;
@@ -38,20 +39,19 @@ public class VertxMain extends AbstractVerticle{
 
     @Override
     public void start(Future<Void> future) {
+        Client redisearchClient = new Client("entitiesFeed", redisHost, 6379);
         EventBus eventBus = vertx.eventBus();
         eventBus.registerDefaultCodec(com.google.gson.JsonObject.class, new GsonJsonMessageCodec());
 
         ConcurrentMap<String, ClientState> clients = new ConcurrentHashMap<>();
-
-        ClientStateListener clientStateListener = new ClientStateListener(clients);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20);
+        Function<String, Distributer> distributerFactory = (clientName) -> new Distributer(redisearchClient, clients, clientName,
+                (address, data) -> eventBus.publish(address, data));
+        ClientStateListener clientStateListener = new ClientStateListener(clients, executorService, distributerFactory);
         eventBus.consumer("setClientState", clientStateListener::handleVertxEvent);
 
         //Thread clientThread = new Thread(() -> clientThread(eventBus));
         //clientThread.start();
-
-        Client redisearchClient = new Client("entitiesFeed", redisHost, 6379);
-        Thread distributerThread = new Thread(() -> pollAndSendUpdates(eventBus, redisearchClient, clients));
-        distributerThread.start();
 
         listenToSockjsBridge();
         listenToTCPBridge();
@@ -86,26 +86,6 @@ public class VertxMain extends AbstractVerticle{
                 System.out.println("Listening on port 7000 failed");
             }
         });
-    }
-
-    private static void pollAndSendUpdates(EventBus eventBus, Client redisearchClient,
-                                           ConcurrentMap<String, ClientState> clients) {
-        Distributer distributer = new Distributer(redisearchClient, clients,
-                (address, data) -> eventBus.publish(address, data));
-        try {
-            while (true) {
-                Instant start = Instant.now();
-                distributer.distribute();
-                Instant end = Instant.now();
-                Duration duration = Duration.between(start, end);
-                Duration timeToSleep = Duration.ofMillis(50).minus(duration);
-                if (!timeToSleep.isNegative()) {
-                    Thread.sleep(timeToSleep.toMillis());
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     private static void clientThread(EventBus eventBus) {

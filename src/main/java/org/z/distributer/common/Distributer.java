@@ -23,29 +23,33 @@ import java.util.function.BiConsumer;
 public class Distributer {
     private Client redisearchClient;
     private ConcurrentMap<String, ClientState> clients;
+    private String clientName;
     private BiConsumer<String, JsonObject> updateConsumer;
 
     private JsonParser jsonParser;
 
     public Distributer(Client redisearchClient, ConcurrentMap<String, ClientState> clients,
-                       BiConsumer<String, JsonObject> updateConsumer) {
+                       String clientName, BiConsumer<String, JsonObject> updateConsumer) {
         this.redisearchClient = redisearchClient;
         this.clients = clients;
+        this.clientName = clientName;
         this.updateConsumer = updateConsumer;
 
         this.jsonParser = new JsonParser();
     }
 
     public void distribute() {
-        for (Map.Entry<String, ClientState> clientEntry : clients.entrySet()) {
-            String clientName = clientEntry.getKey();
-            ClientState clientState = clientEntry.getValue();
+        try {
+            ClientState clientState = clients.get(clientName);
             List<Document> documents = queryDocuments(clientState);
 
             Map<String, ActionAndData> entitiesAndActions = chooseActionsForEntities(documents, clientState);
             Map<String, Instant> newUpdateTimes = new HashMap<>(entitiesAndActions.size());
             sendToClientAndStoreUpdateTimes(clientName, entitiesAndActions, newUpdateTimes);
             clientState.setPreviouslyUpdateTimes(newUpdateTimes);
+        } catch (RuntimeException e) {
+            System.out.println("Failed to distribute to client " + clientName);
+            System.out.println(e);
         }
     }
 
