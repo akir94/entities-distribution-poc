@@ -8,6 +8,7 @@ import io.redisearch.SearchResult;
 import io.redisearch.client.Client;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class Distributer {
         String queryString = "@location:[" + clientState.getCenterLongitude()
                 + " " + clientState.getCenterLatitude()
                 + " " + clientState.getQueryRadius() + " km]";
-        Query query = new Query(queryString).setWithPaload();
+        Query query = new Query(queryString).setWithPaload().limit(0, 100000);
         SearchResult res = redisearchClient.search(query);
         return res.docs;
     }
@@ -88,9 +89,9 @@ public class Distributer {
     }
 
     private ActionAndData decideUpdateOrNot(JsonObject currentPayload, Instant previousUpdateTime) {
-        Instant updateTime = Instant.parse(currentPayload.get("lastUpdateTime").getAsString());
-        if (previousUpdateTime == null || updateTime.isAfter(previousUpdateTime)) {
-            return new ActionAndData(Action.UPDATE, updateTime, currentPayload);
+        Instant redisTime = Instant.parse(currentPayload.get("redisTime").getAsString());
+        if (previousUpdateTime == null || redisTime.isAfter(previousUpdateTime)) {
+            return new ActionAndData(Action.UPDATE, redisTime, currentPayload);
         } else {
             return new ActionAndData(Action.NOT_UPDATE, previousUpdateTime, null);
         }
@@ -103,13 +104,14 @@ public class Distributer {
             ActionAndData stateAndAction = entitiesEntry.getValue();
             switch (stateAndAction.action) {
                 case UPDATE:
-                    stateAndAction.state.addProperty("distributionTime", Instant.now().toString());
+                    Duration redisLatency = Duration.between(stateAndAction.redisTime, Instant.now());
+                    stateAndAction.state.addProperty("redisLatency", redisLatency.toMillis());
                     stateAndAction.state.addProperty("action", "update");
                     updateConsumer.accept(clientName, stateAndAction.state);
-                    newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
+                    newUpdateTimes.put(entityId, stateAndAction.redisTime);
                     break;
                 case NOT_UPDATE:
-                    newUpdateTimes.put(entityId, stateAndAction.lastUpdateTime);
+                    newUpdateTimes.put(entityId, stateAndAction.redisTime);
                     break;
                 case REMOVE:
                     JsonObject deleteMessage = new JsonObject();
@@ -123,12 +125,12 @@ public class Distributer {
 
     private static class ActionAndData {
         public Action action;
-        public Instant lastUpdateTime;
+        public Instant redisTime;
         public JsonObject state;
 
-        public ActionAndData(Action action, Instant lastUpdateTime, JsonObject state) {
+        public ActionAndData(Action action, Instant redisTime, JsonObject state) {
             this.action = action;
-            this.lastUpdateTime = lastUpdateTime;
+            this.redisTime = redisTime;
             this.state = state;
         }
     }

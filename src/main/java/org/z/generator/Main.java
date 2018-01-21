@@ -54,11 +54,9 @@ public class Main {
                     String entityId = "entity" + i;
                     double longitude = 30 + random.nextDouble() * 10;
                     double latitude = 30 + random.nextDouble() * 10;
-                    Instant lastUpdateTime = Instant.now();
-                    double someData = random.nextDouble();
 
                     fields.put("location", longitude + "," + latitude); // Yup, that's the syntax
-                    byte[] payload = generatePayload(entityId, longitude, latitude, lastUpdateTime, someData);
+                    byte[] payload = generatePayload(entityId, longitude, latitude);
                     client.addDocument(entityId, 1.0, fields, false, true, payload);
                 }
                 Thread.sleep(50);
@@ -68,13 +66,12 @@ public class Main {
         }
     }
 
-    private static byte[] generatePayload(String entityId, double longitude, double latitude, Instant lastUpdateTime, double someData) {
+    private static byte[] generatePayload(String entityId, double longitude, double latitude) {
         JsonObject payload = new JsonObject();
         payload.addProperty("id", entityId);
         payload.addProperty("longitude", longitude);
         payload.addProperty("latitude", latitude);
-        payload.addProperty("lastUpdateTime", lastUpdateTime.toString());
-        payload.addProperty("someData", someData);
+        payload.addProperty("redisTime", Instant.now().toString());
         return payload.toString().getBytes(StandardCharsets.UTF_8);
     }
 

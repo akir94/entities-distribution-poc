@@ -25,4 +25,7 @@ dependencies {
     compile group: 'io.vertx', name: 'vertx-web', version: '3.5.0'
     compile 'io.vertx:vertx-tcp-eventbus-bridge:3.5.0'
 
+    // rest server
+    compile 'io.javalin:javalin:1.2.1'
+
 }
