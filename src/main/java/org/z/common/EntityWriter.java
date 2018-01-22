@@ -39,7 +39,7 @@ public class EntityWriter {
 
     private JsonObject randomEntityData(String entityId, double longitude, double latitude) {
         JsonObject data = new JsonObject();
-        data.addProperty("id", entityId);
+        data.addProperty("entityId", entityId);
         data.addProperty("longitude", longitude);
         data.addProperty("latitude", latitude);
         data.addProperty("redisTime", Instant.now().toString());
