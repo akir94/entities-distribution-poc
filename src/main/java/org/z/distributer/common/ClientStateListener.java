@@ -41,13 +41,14 @@ public class ClientStateListener {
                 newState.get("maxLatitude").getAsDouble(),
                 newState.get("minLatitude").getAsDouble());
         System.out.println("registering client called " + clientName + " with data " + newState);
-        ClientState previousClientSatet = clients.put(clientName, newClientState);
-        if (previousClientSatet == null) {
+        ClientState previousClientSate = clients.put(clientName, newClientState);
+        if (previousClientSate == null) {
             initDistributerThread(clientName);
         }
     }
 
     private void initDistributerThread(String clientName) {
+        System.out.println("scheduling a new distributer thread for " + clientName);
         Distributer distributer = distributerFactory.apply(clientName);
         executorService.scheduleAtFixedRate(() -> distributer.distribute(), 0, 50, TimeUnit.MILLISECONDS);
     }

@@ -14,7 +14,7 @@ public class ClientState {
     private double centerLatitude;
     private double queryRadius;
 
-    private Map<String, Instant> previouslyUpdateTimes;
+    private Map<String, Instant> previousRedisTimes;
 
     public ClientState(double maxLongitude, double minLangitude, double maxLatitude, double minLatitude) {
         this.maxLongitude = maxLongitude;
@@ -26,7 +26,7 @@ public class ClientState {
         this.centerLatitude = (maxLatitude + minLatitude) / 2;
         this.queryRadius = computeQueryRadius();
 
-        this.previouslyUpdateTimes = new ConcurrentHashMap<>();
+        this.previousRedisTimes = new ConcurrentHashMap<>();
     }
 
     private double computeQueryRadius() {
@@ -50,8 +50,8 @@ public class ClientState {
         return queryRadius;
     }
 
-    public Map<String, Instant> getPreviouslyUpdateTimes() {
-        return previouslyUpdateTimes;
+    public Map<String, Instant> getPreviousRedisTimes() {
+        return previousRedisTimes;
     }
 
     public boolean isInBounds(double longitude, double latitude) {
@@ -59,7 +59,7 @@ public class ClientState {
                 maxLatitude > latitude && latitude > minLatitude;
     }
 
-    public void setPreviouslyUpdateTimes(Map<String, Instant> previouslyUpdateTimes) {
-        this.previouslyUpdateTimes = previouslyUpdateTimes;
+    public void setPreviousRedisTimes(Map<String, Instant> previousRedisTimes) {
+        this.previousRedisTimes = previousRedisTimes;
     }
 }
