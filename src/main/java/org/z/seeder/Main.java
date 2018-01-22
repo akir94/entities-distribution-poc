@@ -9,11 +9,12 @@ import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        String redisHost = args[1];
+        String redisHost = args[0];
+        int port = Integer.parseInt(args[1]);
         Client redisearchClient = new Client("entitiesFeed", redisHost, 6379, 3000, 100);
         EntityWriter entityWriter = new EntityWriter(redisearchClient, new Random());
         JsonParser parser = new JsonParser();
-        Javalin app = Javalin.start(7003);
+        Javalin app = Javalin.start(port);
         app.post("/", new RequestHandler(entityWriter, parser));
     }
 }

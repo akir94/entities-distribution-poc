@@ -29,9 +29,10 @@ public class RequestHandler implements Handler{
                 seedData.get("maxLatitude").getAsDouble());
         Instant triggerTime = Instant.parse(seedData.get("triggerTime").getAsString());
 
-        for(int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             String entityId = UUID.randomUUID().toString();
             entityWriter.writeRandomEntity(entityId, populationArea, triggerTime);
         }
+        ctx.result("ok");
     }
 }

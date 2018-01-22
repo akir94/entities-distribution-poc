@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(1)
-        data["triggerTime"] = datetime.datetime.utcnow().isoformat()
+        data["triggerTime"] = datetime.datetime.utcnow().isoformat('T') + 'Z'  # a hack to sidestep timezone issues
         data_json = json.dumps(data)
         response = requests.post(url, data=data_json, headers=headers)
         print("response: " + str(response))
