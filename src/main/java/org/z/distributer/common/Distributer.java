@@ -57,7 +57,7 @@ public class Distributer {
         String queryString = "@location:[" + clientState.getCenterLongitude()
                 + " " + clientState.getCenterLatitude()
                 + " " + clientState.getQueryRadius() + " km]";
-        Query query = new Query(queryString).setWithPaload().limit(0, 100000);
+        Query query = new Query(queryString).limit(0, 100000);
         SearchResult res = redisearchClient.search(query);
         return res.docs;
     }

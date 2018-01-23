@@ -26,9 +26,6 @@ dependencies {
     compile 'io.vertx:vertx-tcp-eventbus-bridge:3.5.0'
 
     // rest stuff
-    compile 'io.javalin:javalin:1.2.1'
     compile 'com.squareup.okhttp3:okhttp:3.9.1'
-
-    runtime group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.6'
 
 }

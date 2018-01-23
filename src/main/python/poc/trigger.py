@@ -1,9 +1,8 @@
 import datetime
 import json
+import requests
 import sys
 import time
-
-import requests
 
 if __name__ == "__main__":
     url = sys.argv[1]

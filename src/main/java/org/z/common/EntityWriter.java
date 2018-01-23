@@ -2,7 +2,9 @@ package org.z.common;
 
 import com.google.gson.JsonObject;
 import io.redisearch.client.Client;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
+import java.net.SocketTimeoutException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +31,7 @@ public class EntityWriter {
         Map<String, Object> fields = new HashMap<>();
         fields.put("location", longitude + "," + latitude);  // Yup, that's the syntax
         fields.put("data", data.toString());
-        redisearchClient.replaceDocument(entityId, 1.0, fields);
+        writeWithRetries(entityId, fields);
     }
 
     private double randomInRange(double min, double max) {
@@ -44,6 +46,22 @@ public class EntityWriter {
         data.addProperty("latitude", latitude);
         data.addProperty("redisTime", Instant.now().toString());
         return data;
+    }
+
+    private void writeWithRetries(String entityId, Map<String, Object> fields) {
+        boolean success = false;
+        while (!success) {
+            try {
+                redisearchClient.replaceDocument(entityId, 1.0, fields);
+                success = true;
+            } catch (JedisConnectionException e) {
+                if (e.getCause() instanceof SocketTimeoutException) {
+                    System.out.println("got timeout exception, retrying");
+                } else {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     public static class PopulationArea {

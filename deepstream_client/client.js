@@ -2,43 +2,38 @@ const deepstream = require('deepstream.io-client-js');
 const client = deepstream('192.168.0.53:6020').login();
 
 const EVENT_NAME = 'setClientState';
-const MY_NAME = 'Alon3';
+const PREFIX = 'Alon';
+var MY_NAME = PREFIX + process.argv[2]
 const dataToSend = {
 	name: MY_NAME,
-	maxLongitude: 40,
-	minLongitude: 30,
-	maxLatitude: 40,
-	minLatitude: 30
+	minLongitude: process.argv[3],
+	maxLongitude: process.argv[4],
+	minLatitude: process.argv[5],
+	maxLatitude: process.argv[6]
 };
 
 // Statistics
 let count = 0;
-let sum = 0;
 
 client.event.subscribe(MY_NAME, (data) => {
-		let date = new Date();
-		let lastUpdateTime = new Date(data.lastUpdateTime);
-		let receivedTime = new Date(data.distributionTime);
-		let diffReceivedTime = date - receivedTime;
+		if(data.triggerTime == null) {
+		    count += 1
+		} else {
+		    let date = new Date();
+        	let redisDelta = data.redisDelta;
+		    let triggerTime = new Date(data.triggerTime);
+		    let triggerDelta = date - triggerTime
 
-
-	
-		if (data.action != 'delete') {
-			count++;
-			sum += diffReceivedTime;
-			console.log('Entity ID: ' + data.id);
-			console.log(diffReceivedTime);
-			console.log(date - lastUpdateTime);
-			console.log('Average: ' + (sum / count));
+//		    console.log("triggerDelta = " + triggerDelta)
+//		    console.log("redisDelta = " + redisDelta)
+//		    console.log("count = " + count)
+		    console.log(triggerDelta + "," + redisDelta + "," + count)
+		    count = 0
 		}
 
-		console.log("=================================");
-		// date = date.getTime()/1000|0;
-		// console.log(data.lastUpdateTime);
-		// const delay = date - data.lastUpdateTime;
-		// console.log('Received Entity ID: ' + data.id + ' ' + delay);
+		//console.log("=================================");
 
 });
 
 client.event.emit(EVENT_NAME, dataToSend);
-console.log('Event emitted!');
+//console.log('Event emitted!');

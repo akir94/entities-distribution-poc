@@ -15,7 +15,7 @@ public class Main {
         String redisHost = args[0];
         int totalEntityAmount = Integer.parseInt(args[1]);
         int workersAmount = Integer.parseInt(args[2]);
-        Client client = new Client("entitiesFeed", redisHost, 6379);
+        Client client = new Client("entitiesFeed", redisHost, 6379, 1500, 100);
         EntityWriter.PopulationArea populationArea = new EntityWriter.PopulationArea(30, 40, 30, 40);
 
         try {
@@ -35,7 +35,7 @@ public class Main {
 
         executor.shutdown();
         try {
-            while(!executor.awaitTermination(1, TimeUnit.HOURS)) {
+            while (!executor.awaitTermination(1, TimeUnit.HOURS)) {
                 System.out.println("An hour has passed, woohoo!");
             }
         } catch (InterruptedException e) {
@@ -51,6 +51,7 @@ public class Main {
                     String entityId = "entity" + i;
                     writer.writeRandomEntity(entityId, populationArea, null);
                 }
+                System.out.println("finished a loop");
                 Thread.sleep(50);
             }
         } catch (InterruptedException e) {
