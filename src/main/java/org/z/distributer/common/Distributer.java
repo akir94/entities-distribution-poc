@@ -81,8 +81,8 @@ public class Distributer {
     }
 
     private void prepareAndDistribute(JsonObject data, Instant redisTime) {
-        Duration redisLatency = Duration.between(Instant.now(), redisTime);
-        data.addProperty("redisLatency", redisLatency.toMillis());
+        Duration redisDelta = Duration.between(redisTime, Instant.now());
+        data.addProperty("redisDelta", redisDelta.toMillis());
         updateConsumer.accept(clientName, data);
     }
 }

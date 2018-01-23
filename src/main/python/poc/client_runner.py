@@ -35,6 +35,7 @@ def main():
     for process in processes:
         #if process is not None:
         process.kill()
+        print(process.communicate())
 
 
 def generate_area(total_entities):
