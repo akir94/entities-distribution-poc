@@ -1,21 +1,23 @@
 package org.z.common;
 
 import com.google.gson.JsonObject;
-import io.redisearch.client.Client;
+import io.deepstream.DeepstreamClient;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.SocketTimeoutException;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 public class EntityWriter {
-    private Client redisearchClient;
+    private Jedis jedis;
+    private DeepstreamClient deepstream;
     private Random random;
 
-    public EntityWriter(Client redisearchClient, Random random) {
-        this.redisearchClient = redisearchClient;
+    public EntityWriter(Jedis jedis, DeepstreamClient deepstream, Random random) {
+        this.jedis = jedis;
+        this.deepstream = deepstream;
         this.random = random;
     }
 
@@ -28,10 +30,13 @@ public class EntityWriter {
             data.addProperty("triggerTime", triggerTime.toString());
         }
 
-        Map<String, Object> fields = new HashMap<>();
-        fields.put("location", longitude + "," + latitude);  // Yup, that's the syntax
-        fields.put("data", data.toString());
-        writeWithRetries(entityId, fields);
+        Instant before = Instant.now();
+        writeToRedis(entityId, longitude, latitude);
+        Instant between = Instant.now();
+        writeToDeepstream(entityId, data);
+        Instant after = Instant.now();
+        System.out.println("redis delta = " + Duration.between(before, between));
+        System.out.println("deepstream delta = " + Duration.between(between, after));
     }
 
     private double randomInRange(double min, double max) {
@@ -48,11 +53,11 @@ public class EntityWriter {
         return data;
     }
 
-    private void writeWithRetries(String entityId, Map<String, Object> fields) {
+    private void writeToRedis(String entityId, double longitude, double latitude) {
         boolean success = false;
         while (!success) {
             try {
-                redisearchClient.replaceDocument(entityId, 1.0, fields);
+                jedis.geoadd("EntitiesGeospace", longitude, latitude, entityId);
                 success = true;
             } catch (JedisConnectionException e) {
                 if (e.getCause() instanceof SocketTimeoutException) {
@@ -62,6 +67,10 @@ public class EntityWriter {
                 }
             }
         }
+    }
+
+    private void writeToDeepstream(String entityId, JsonObject data) {
+        deepstream.record.getRecord("entity/" + entityId).set(data);
     }
 
     public static class PopulationArea {

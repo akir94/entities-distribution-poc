@@ -1,39 +1,61 @@
 const deepstream = require('deepstream.io-client-js');
 const client = deepstream('192.168.0.53:6020').login();
 
-const EVENT_NAME = 'setClientState';
-const PREFIX = 'Alon';
-var MY_NAME = PREFIX + process.argv[2]
-const dataToSend = {
-	name: MY_NAME,
-	minLongitude: process.argv[3],
-	maxLongitude: process.argv[4],
-	minLatitude: process.argv[5],
-	maxLatitude: process.argv[6]
-};
+const minLongitude = process.argv[3];
+const maxLongitude = process.argv[4];
+const minLatitude = process.argv[5];
+const maxLatitude = process.argv[6];
+const listName = 'entities_around/' + minLongitude +
+                                '/' + maxLongitude +
+                                '/' + minLatitude +
+                                '/' + maxLatitude;
+
+var list = client.record.getList(listName);
+list.subscribe(onListUpdate);
+
+var subscribedEntities = new Set();
+
+
+function onListUpdate(entityKeys) {
+    console.log("list updated")
+    entries = list.getEntries();
+    updateSubs(entries);
+}
+
+function updateSubs(entries) {
+    for( let i = 0; i < entries.length; i++) {
+        entityKey = entries[i];
+        if( !subscribedEntities.has(entityKey) ) {
+            client.record.getRecord(entityKey).subscribe(entityChanged, true);
+            subscribedEntities.add(entityKey);
+            console.log("subscribed to " + entityKey)
+        }
+    }
+
+    for( let entityKey in subscribedEntities ) {
+        if( entries.indexOf( entityKey ) === -1 ) {
+            entries.delete(entityKey);
+            var record = client.record.getRecord(entityKey);
+            record.unsubscribe(entityChanged);
+            record.discard();
+            console.log("unsubscribed from " + entityKey)
+        }
+    }
+}
 
 // Statistics
-let count = 0;
+var count = 0;
 
-client.event.subscribe(MY_NAME, (data) => {
-		if(data.triggerTime == null) {
-		    count += 1
-		} else {
-		    let date = new Date();
-        	let redisDelta = data.redisDelta;
-		    let triggerTime = new Date(data.triggerTime);
-		    let triggerDelta = date - triggerTime
+function entityChanged(data) {
+    if(data.triggerTime == null) {
+        count += 1
+    } else {
+        let date = new Date();
+        let redisDelta = data.redisDelta;
+        let triggerTime = new Date(data.triggerTime);
+        let triggerDelta = date - triggerTime
 
-//		    console.log("triggerDelta = " + triggerDelta)
-//		    console.log("redisDelta = " + redisDelta)
-//		    console.log("count = " + count)
-		    console.log(triggerDelta + "," + redisDelta + "," + count)
-		    count = 0
-		}
-
-		//console.log("=================================");
-
-});
-
-client.event.emit(EVENT_NAME, dataToSend);
-//console.log('Event emitted!');
+        console.log(triggerDelta + "," + redisDelta + "," + count)
+        count = 0
+    }
+}
