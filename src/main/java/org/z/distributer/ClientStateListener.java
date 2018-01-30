@@ -18,6 +18,7 @@ public class ClientStateListener implements ListenListener {
 
     private Map<String, ScheduledFuture> threadTokens;
 
+
     public ClientStateListener(ScheduledExecutorService scheduledExecutor,
                                DeepstreamClient deepstream,
                                Jedis jedis) {

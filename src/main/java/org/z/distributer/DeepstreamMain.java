@@ -19,8 +19,17 @@ public class DeepstreamMain {
             ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(20);
             ClientStateListener listener = new ClientStateListener(scheduledExecutor, deepstream, jedis);
             deepstream.record.listen("entities_around/.*", listener);
+
+            addShutdownHook(deepstream, jedis);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void addShutdownHook(DeepstreamClient deepstream, Jedis jedis) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            deepstream.close();
+            jedis.close();
+        }));
     }
 }

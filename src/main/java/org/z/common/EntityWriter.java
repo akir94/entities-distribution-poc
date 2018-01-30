@@ -30,13 +30,8 @@ public class EntityWriter {
             data.addProperty("triggerTime", triggerTime.toString());
         }
 
-        Instant before = Instant.now();
         writeToRedis(entityId, longitude, latitude);
-        Instant between = Instant.now();
         writeToDeepstream(entityId, data);
-        Instant after = Instant.now();
-        System.out.println("redis delta = " + Duration.between(before, between));
-        System.out.println("deepstream delta = " + Duration.between(between, after));
     }
 
     private double randomInRange(double min, double max) {
@@ -84,6 +79,34 @@ public class EntityWriter {
             this.maxLong = maxLong;
             this.minLat = minLat;
             this.maxLat = maxLat;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PopulationArea that = (PopulationArea) o;
+
+            if (Double.compare(that.minLong, minLong) != 0) return false;
+            if (Double.compare(that.maxLong, maxLong) != 0) return false;
+            if (Double.compare(that.minLat, minLat) != 0) return false;
+            return Double.compare(that.maxLat, maxLat) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            long temp;
+            temp = Double.doubleToLongBits(minLong);
+            result = (int) (temp ^ (temp >>> 32));
+            temp = Double.doubleToLongBits(maxLong);
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
+            temp = Double.doubleToLongBits(minLat);
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
+            temp = Double.doubleToLongBits(maxLat);
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
+            return result;
         }
     }
 }

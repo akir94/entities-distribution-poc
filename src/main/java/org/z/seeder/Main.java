@@ -34,8 +34,17 @@ public class Main {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            addShutdownHook(deepstream, jedis);
         } catch (URISyntaxException e) {
             System.out.println(e);
         }
+    }
+
+    private static void addShutdownHook(DeepstreamClient deepstream, Jedis jedis) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            deepstream.close();
+            jedis.close();
+        }));
     }
 }

@@ -8,6 +8,8 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
 
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,6 +36,7 @@ public class Main {
                 executor.submit(() -> updateEntities(entityWriter, populationArea, startIndex, endIndex));
             }
 
+            addShutdownHook(deepstream, jedis);
             executor.shutdown();
             try {
                 while (!executor.awaitTermination(1, TimeUnit.HOURS)) {
@@ -50,17 +53,25 @@ public class Main {
     private static void updateEntities(EntityWriter entityWriter, EntityWriter.PopulationArea populationArea, int startIndex, int endIndex) {
         try {
             while (true) {
+                Instant start = Instant.now();
                 for (int i = startIndex; i < endIndex; i++) {
-                    System.out.println("entity number " + i);
                     String entityId = "entity" + i;
                     entityWriter.writeRandomEntity(entityId, populationArea, null);
                 }
+                System.out.println("loop delta = " + Duration.between(start, Instant.now()).toMillis());
                 System.out.println("finished a loop");
                 Thread.sleep(50);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private static void addShutdownHook(DeepstreamClient deepstream, Jedis jedis) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            deepstream.close();
+            jedis.close();
+        }));
     }
 
 }
