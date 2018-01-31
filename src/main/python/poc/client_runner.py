@@ -28,8 +28,7 @@ def main():
 
     processes = []
     for i in range(0, client_amount):
-        # area = generate_area(total_entities)
-        area = (30, 40, 30, 40)
+        area = generate_area(total_entities)
         processes.append(run_trigger(seed_entities_amount, area))
         processes.append(run_listener(i, area))
 
@@ -56,7 +55,7 @@ def main():
 
 
 def generate_area(total_entities):
-    entity_density = total_entities / (generation_long_range * generation_lat_range)  # generator dimensions
+    entity_density = total_entities / (generation_long_range * generation_lat_range)
     lat_size = 1  # degrees
     long_size = 100 / (entity_density * lat_size)  # ensure 100 entities on average
 

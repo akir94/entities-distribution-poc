@@ -9,16 +9,15 @@ import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class EntityWriter {
     private Jedis jedis;
     private DeepstreamClient deepstream;
-    private Random random;
 
-    public EntityWriter(Jedis jedis, DeepstreamClient deepstream, Random random) {
+    public EntityWriter(Jedis jedis, DeepstreamClient deepstream) {
         this.jedis = jedis;
         this.deepstream = deepstream;
-        this.random = random;
     }
 
     public void writeRandomEntity(String entityId, PopulationArea populationArea, Instant triggerTime) {
@@ -36,7 +35,7 @@ public class EntityWriter {
 
     private double randomInRange(double min, double max) {
         double range = max - min;
-        return random.nextDouble() * range + min;
+        return ThreadLocalRandom.current().nextDouble() * range + min;
     }
 
     private JsonObject randomEntityData(String entityId, double longitude, double latitude) {

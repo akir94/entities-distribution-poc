@@ -6,6 +6,8 @@ import io.deepstream.DeepstreamClient;
 import io.redisearch.client.Client;
 import org.z.common.EntityWriter;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,31 +22,37 @@ public class Main {
         int port = Integer.parseInt(args[2]);
 
         try {
-            Jedis jedis = new Jedis(redisHost);
+            JedisPool jedisPool = createJedisPool(redisHost);
             DeepstreamClient deepstream = new DeepstreamClient(deepstreamHost + ":6020");
             deepstream.login();
-            EntityWriter entityWriter = new EntityWriter(jedis, deepstream, new Random());
             JsonParser parser = new JsonParser();
 
             try {
                 HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-                server.createContext("/", new RequestHandler(entityWriter, parser));
+                server.createContext("/", new RequestHandler(jedisPool, deepstream, parser));
                 server.setExecutor(Executors.newCachedThreadPool());
                 server.start();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-            addShutdownHook(deepstream, jedis);
+            addShutdownHook(deepstream, jedisPool);
         } catch (URISyntaxException e) {
             System.out.println(e);
         }
     }
 
-    private static void addShutdownHook(DeepstreamClient deepstream, Jedis jedis) {
+    private static JedisPool createJedisPool(String redisHost) {
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxTotal(20);
+        jedisPoolConfig.setMaxIdle(20);
+        return new JedisPool(jedisPoolConfig, redisHost);
+    }
+
+    private static void addShutdownHook(DeepstreamClient deepstream, JedisPool jedisPool) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             deepstream.close();
-            jedis.close();
+            jedisPool.close();
         }));
     }
 }

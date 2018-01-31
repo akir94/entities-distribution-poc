@@ -2,6 +2,8 @@ package org.z.distributer;
 
 import io.deepstream.DeepstreamClient;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import java.net.URISyntaxException;
 import java.util.concurrent.Executors;
@@ -12,24 +14,31 @@ public class DeepstreamMain {
         String deepstreamHost = args[0];
         String redisHost = args[1];
         try {
-            Jedis jedis = new Jedis(redisHost);
+            JedisPool jedisPool = createJedisPool(redisHost);
             DeepstreamClient deepstream = new DeepstreamClient(deepstreamHost + ":6020");
             deepstream.login();
 
             ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(20);
-            ClientStateListener listener = new ClientStateListener(scheduledExecutor, deepstream, jedis);
+            ClientStateListener listener = new ClientStateListener(scheduledExecutor, deepstream, jedisPool);
             deepstream.record.listen("entities_around/.*", listener);
 
-            addShutdownHook(deepstream, jedis);
+            addShutdownHook(deepstream, jedisPool);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
     }
 
-    private static void addShutdownHook(DeepstreamClient deepstream, Jedis jedis) {
+    private static JedisPool createJedisPool(String redisHost) {
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxTotal(20);
+        jedisPoolConfig.setMaxIdle(20);
+        return new JedisPool(jedisPoolConfig, redisHost);
+    }
+
+    private static void addShutdownHook(DeepstreamClient deepstream, JedisPool jedisPool) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             deepstream.close();
-            jedis.close();
+            jedisPool.close();
         }));
     }
 }

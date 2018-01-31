@@ -4,6 +4,7 @@ import io.deepstream.DeepstreamClient;
 import io.deepstream.List;
 import io.deepstream.ListenListener;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,17 +15,17 @@ import java.util.concurrent.TimeUnit;
 public class ClientStateListener implements ListenListener {
     private ScheduledExecutorService scheduledExecutor;
     private DeepstreamClient deepstream;
-    private Jedis jedis;
+    private JedisPool jedisPool;
 
     private Map<String, ScheduledFuture> threadTokens;
 
 
     public ClientStateListener(ScheduledExecutorService scheduledExecutor,
                                DeepstreamClient deepstream,
-                               Jedis jedis) {
+                               JedisPool jedisPool) {
         this.scheduledExecutor = scheduledExecutor;
         this.deepstream = deepstream;
-        this.jedis = jedis;
+        this.jedisPool = jedisPool;
 
         this.threadTokens = new HashMap<>();
     }
@@ -56,7 +57,7 @@ public class ClientStateListener implements ListenListener {
 
     private void initNotifierThread(String listName, ClientState clientState) {
         System.out.println("scheduling a new distributer thread for " + listName);
-        ClientNotifier notifier = new ClientNotifier(jedis, clientState, listName, deepstream);
+        ClientNotifier notifier = new ClientNotifier(jedisPool.getResource(), clientState, listName, deepstream);
         ScheduledFuture token = scheduledExecutor.scheduleAtFixedRate(
                 notifier::queryKeysAndNotifyClient, 0, 5, TimeUnit.SECONDS);
         threadTokens.put(listName, token);

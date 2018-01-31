@@ -52,11 +52,9 @@ function entityChanged(data) {
         count += 1;
     } else {
         let date = new Date();
-//        let redisDelta = data.redisDelta;
         let triggerTime = new Date(data.triggerTime);
         let triggerDelta = date - triggerTime;
 
-//        console.log(triggerDelta + "," + redisDelta + "," + count);
         console.log(triggerDelta + "," + count);
         count = 0;
     }

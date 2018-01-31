@@ -29,6 +29,7 @@ public class ClientNotifier {
         System.out.println("notifier querying for " + listName);
         try {
             List<GeoRadiusResponse> responses = queryKeys();
+            System.out.println("found " + responses.size() + " entities in area");
             String[] keysArray = new String[responses.size()];
             for (int i = 0; i < responses.size(); i++) {
                 keysArray[i] = responses.get(i).getMemberByString();
@@ -39,7 +40,7 @@ public class ClientNotifier {
             // No need to discard list here, this invocation is counted as part of the "active data provider"
         } catch (RuntimeException e) {
             System.out.println("Failed to distribute to list " + listName);
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
